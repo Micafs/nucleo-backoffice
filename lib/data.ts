@@ -174,6 +174,34 @@ export const CURRENT_ADMIN = {
   role: 'super' as RoleId,
 };
 
+// ─── Products ──────────────────────────────────────────────
+export type ProductId = 'gci' | 'quarkid' | 'login' | 'bax';
+
+export interface Product {
+  id: ProductId;
+  name: string;
+  description: string;
+  color: string;
+  glyph: string;
+}
+
+export const PRODUCTS: Product[] = [
+  { id: 'gci', name: 'GCI', description: 'Gestión de credenciales e identidad.', color: '#0369a1', glyph: 'GC' },
+  { id: 'quarkid', name: 'Ecosistema Quark ID', description: 'Identidad digital soberana con QuarkID.', color: '#7c3aed', glyph: 'QK' },
+  { id: 'login', name: 'LOGIN', description: 'Autenticación y acceso de usuarios miBA.', color: '#0f8a54', glyph: 'LG' },
+  { id: 'bax', name: 'BAX', description: 'Back-end de accesos y experiencias.', color: '#b45309', glyph: 'BX' },
+];
+
+export const getProduct = (id: string): Product | undefined =>
+  PRODUCTS.find((p) => p.id === id);
+
+export interface ParsedSheet {
+  fileName: string;
+  uploadedAt: string;
+  headers: string[];
+  rows: Record<string, string>[];
+}
+
 export const AUDIT_LOG: AuditEntry[] = [
   { time: '14:32', actor: 'Ana Rivas', action: 'invitó a', target: 'valentina@empresa.com', meta: 'al equipo Integraciones', icon: 'user-plus' },
   { time: '13:15', actor: 'Martín Giménez', action: 'creó', target: 'un nuevo Feature Flag', meta: 'en Tech', icon: 'plus' },

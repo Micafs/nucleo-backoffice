@@ -15,7 +15,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const submit = (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email.includes('@')) { setError('Ingresá un email válido.'); return; }
     if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return; }
@@ -159,7 +159,7 @@ function LoginVisualMock() {
             <div style={{ fontSize: 12, fontWeight: 500 }}>{t.name}</div>
             <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t.description}</div>
           </div>
-          <span className="badge badge--mono">{Math.floor(Math.random() * 8) + 3} miembros</span>
+          <span className="badge badge--mono">{{ integraciones: 4, tech: 5, producto: 5 }[t.id] ?? 4} miembros</span>
         </div>
       ))}
       <div style={{ marginTop: 14, padding: 10, background: 'var(--bg-soft)', borderRadius: 8, fontSize: 11, color: 'var(--ink-3)', display: 'flex', gap: 8, alignItems: 'center' }}>

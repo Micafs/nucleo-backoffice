@@ -2,14 +2,15 @@
 
 import Icon from '@/components/Icon';
 import { RolePill } from '@/components/ui';
-import { TEAMS, USERS, getTeam } from '@/lib/data';
+import { USERS, PRODUCTS, getTeam } from '@/lib/data';
 
 interface MemberWorkspaceProps {
   activeTeam: string;
   setActiveTeam: (id: string) => void;
+  onNavigate: (r: { page: string; productId?: string; productTab?: string }) => void;
 }
 
-export default function MemberWorkspace({ activeTeam, setActiveTeam }: MemberWorkspaceProps) {
+export default function MemberWorkspace({ activeTeam, setActiveTeam, onNavigate }: MemberWorkspaceProps) {
   const team = getTeam(activeTeam || 'integraciones');
   const user = USERS[0]; // Lucía
   const myTeams = user.memberships.map((m) => ({ team: getTeam(m.team), role: m.role }));
@@ -62,6 +63,38 @@ export default function MemberWorkspace({ activeTeam, setActiveTeam }: MemberWor
               <Icon name="chevron-right" size={14} className="muted" />
             </div>
           ))}
+          {membership.role === 'admin' && (
+            <>
+              <div className="sep" style={{ margin: '8px 0' }} />
+              <div className="xsmall muted" style={{ padding: '2px 0 6px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Productos</div>
+              {PRODUCTS.map((p) => (
+                <div key={p.id} className="ws-item">
+                  <div className="ws-item-icon">
+                    <div style={{ width: 14, height: 14, borderRadius: 3, background: p.color, flexShrink: 0 }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 500 }}>{p.name}</div>
+                  </div>
+                  <div className="row" style={{ gap: 4 }}>
+                    <button
+                      className="btn btn--ghost btn--icon btn--sm"
+                      title="Homologaciones"
+                      onClick={() => onNavigate({ page: 'product-detail', productId: p.id, productTab: 'homologacion' })}
+                    >
+                      <Icon name="activity" size={13} />
+                    </button>
+                    <button
+                      className="btn btn--ghost btn--icon btn--sm"
+                      title="Roadmap"
+                      onClick={() => onNavigate({ page: 'product-detail', productId: p.id, productTab: 'roadmap' })}
+                    >
+                      <Icon name="calendar" size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         <div className="col" style={{ gap: 20 }}>
