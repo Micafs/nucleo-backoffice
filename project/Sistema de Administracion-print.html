@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nucleo · Back Office (Print)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    @page { size: 1440px 1024px; margin: 0; }
+    html, body { margin: 0; padding: 0; background: #fafaf7; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .print-page {
+      width: 1440px;
+      height: 1024px;
+      overflow: hidden;
+      page-break-after: always;
+      break-after: page;
+      background: var(--bg);
+      position: relative;
+      display: flex;
+    }
+    .print-page:last-child { page-break-after: auto; break-after: auto; }
+    .print-page .app { min-height: auto; height: 1024px; width: 1440px; }
+    .print-page .sidebar { height: 1024px; position: static; }
+    .print-page .main { height: 1024px; overflow: hidden; }
+    .print-page .content { padding-bottom: 24px; }
+    .print-page .toast-stack { display: none; }
+    .print-label {
+      position: absolute;
+      top: 16px;
+      right: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-4);
+      background: rgba(255,255,255,0.85);
+      padding: 4px 10px;
+      border-radius: 999px;
+      z-index: 100;
+    }
+    /* Remove animations for print */
+    * { animation: none !important; transition: none !important; }
+    /* Login page sizing */
+    .print-page .login-page { min-height: 1024px; height: 1024px; }
+
+    @media print {
+      .print-page { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="components.jsx"></script>
+  <script type="text/babel" src="pages-login.jsx"></script>
+  <script type="text/babel" src="pages-admin.jsx"></script>
+  <script type="text/babel" src="pages-team-detail.jsx"></script>
+  <script type="text/babel" src="pages-users.jsx"></script>
+  <script type="text/babel">
+    // Print-mode app: render every major screen as a separate page.
+
+    const PrintPage = ({ label, children }) => (
+      <div className="print-page">
+        <span className="print-label">{label}</span>
+        {children}
+      </div>
+    );
+
+    // Shared state for non-interactive print previews
+    const DEFAULT_PERMS = {
+      integraciones: { admin: ROLE_DEFAULTS.admin, member: ROLE_DEFAULTS.member, viewer: ROLE_DEFAULTS.viewer },
+      tech:          { admin: ROLE_DEFAULTS.admin, member: ROLE_DEFAULTS.member, viewer: ROLE_DEFAULTS.viewer },
+      producto:      { admin: ROLE_DEFAULTS.admin, member: ROLE_DEFAULTS.member, viewer: ROLE_DEFAULTS.viewer },
+    };
+
+    const AdminShell = ({ route, children, view = 'admin', activeTeam = 'integraciones' }) => {
+      const crumbs = (() => {
+        if (route.page === 'dashboard') return ['Back Office', 'Dashboard'];
+        if (route.page === 'teams') return ['Back Office', 'Equipos'];
+        if (route.page === 'team-detail') return ['Back Office', 'Equipos', getTeam(route.teamId).name];
+        if (route.page === 'users') return ['Back Office', 'Usuarios'];
+        if (route.page === 'roles') return ['Back Office', 'Roles y permisos'];
+        if (route.page === 'audit') return ['Back Office', 'Auditoría'];
+        if (route.page === 'workspace') return ['Mi espacio', getTeam(activeTeam).name];
+        return ['Back Office'];
+      })();
+      return (
+        <div className="app">
+          <Sidebar route={{ ...route, activeTeam }} onNavigate={() => {}} view={view} invitePending={1} onSwitchView={() => {}} />
+          <main className="main">
+            <Topbar crumbs={crumbs} />
+            <div className="content">{children}</div>
+          </main>
+        </div>
+      );
+    };
+
+    function PrintDeck() {
+      const [perms, setPerms] = React.useState(DEFAULT_PERMS);
+      return (
+        <>
+          {/* Page 1: Login */}
+          <PrintPage label="01 · Login">
+            <LoginPage onLogin={() => {}} />
+          </PrintPage>
+
+          {/* Page 2: Dashboard */}
+          <PrintPage label="02 · Dashboard (Super Admin)">
+            <AdminShell route={{ page: 'dashboard' }}>
+              <DashboardPage users={USERS} onNavigate={() => {}} />
+            </AdminShell>
+          </PrintPage>
+
+          {/* Page 3: Teams list */}
+          <PrintPage label="03 · Equipos">
+            <AdminShell route={{ page: 'teams' }}>
+              <TeamsPage users={USERS} onNavigate={() => {}} onCreate={() => {}} />
+            </AdminShell>
+          </PrintPage>
+
+          {/* Page 4: Team Detail — Members */}
+          <PrintPage label="04 · Detalle de equipo · Miembros">
+            <AdminShell route={{ page: 'team-detail', teamId: 'integraciones' }}>
+              <TeamDetailPage teamId="integraciones" users={USERS}
+                              onNavigate={() => {}} onInvite={() => {}}
+                              permView="matrix" setPermView={() => {}}
+                              permissions={perms} setPermissions={setPerms} />
+            </AdminShell>
+          </PrintPage>
+
+          {/* Page 5: Permissions — Matrix */}
+          <PrintPage label="05 · Permisos · Variante Matriz">
+            <AdminShell route={{ page: 'roles' }}>
+              <RolesPage permView="matrix" setPermView={() => {}}
+                         permissions={perms} setPermissions={setPerms} />
+            </AdminShell>
+          </PrintPage>
+
+          {/* Page 6: Permissions — Groups */}
+          <PrintPage label="06 · Permisos · Variante Agrupado">
+            <AdminShell route={{ page: 'roles' }}>
+              <RolesPage permView="groups" setPermView={() => {}}
+                         permissions={perms} setPermissions={setPerms} />
+            </AdminShell>
+          </PrintPage>
+
+          {/* Page 7: Permissions — Cards */}
+          <PrintPage label="07 · Permisos · Variante Cards">
+            <AdminShell route={{ page: 'roles' }}>
+              <RolesPage permView="cards" setPermView={() => {}}
+                         permissions={perms} setPermissions={setPerms} />
+            </AdminShell>
+          </PrintPage>
+
+          {/* Page 8: Users */}
+          <PrintPage label="08 · Usuarios">
+            <AdminShell route={{ page: 'users' }}>
+              <UsersPage users={USERS} setUsers={() => {}}
+                         openInvite={null} setOpenInvite={() => {}} onToast={() => {}} />
+            </AdminShell>
+          </PrintPage>
+
+          {/* Page 9: Invite modal overlay (simulated) */}
+          <PrintPage label="09 · Invitar usuario">
+            <AdminShell route={{ page: 'users' }}>
+              <UsersPage users={USERS} setUsers={() => {}}
+                         openInvite={{ teamId: null }} setOpenInvite={() => {}} onToast={() => {}} />
+            </AdminShell>
+          </PrintPage>
+
+          {/* Page 10: Audit */}
+          <PrintPage label="10 · Auditoría">
+            <AdminShell route={{ page: 'audit' }}>
+              <AuditPage />
+            </AdminShell>
+          </PrintPage>
+
+          {/* Page 11: Member Workspace */}
+          <PrintPage label="11 · Vista del miembro">
+            <AdminShell route={{ page: 'workspace' }} view="member" activeTeam="integraciones">
+              <MemberWorkspace activeTeam="integraciones" setActiveTeam={() => {}} />
+            </AdminShell>
+          </PrintPage>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<PrintDeck />);
+
+    // Auto-print after fonts + JSX are ready
+    (async () => {
+      if (document.fonts && document.fonts.ready) {
+        try { await document.fonts.ready; } catch (e) {}
+      }
+      await new Promise(r => setTimeout(r, 800));
+      window.print();
+    })();
+  </script>
+</body>
+</html>
